@@ -12,16 +12,7 @@ from canny import canny
 
 def compute_normal(boundary_pt, normal, patch_size = 9):
     
-    x = boundary_pt[0]
-    y = boundary_pt[1]
-    pp = np.arange(-1*patch_size, patch_size+1)
-    norm = 0
-    
-    for p in pp:
-        for q in pp:
-            norm += normal[x+p,y+q]
-    return norm
-    
+    return 1
     
 def compute_data(boundary_pt, alpha, gradient, front_normal, patch_size = 9):
     
@@ -34,41 +25,32 @@ def compute_data(boundary_pt, alpha, gradient, front_normal, patch_size = 9):
         for q in pp:
             data += np.dot(gradient[x+p,y+q], front_normal[x+p,y+q])
     data /= alpha
-    return data
+    return data    
     
+def compute_confidence(boundary_ptx, boundary_pty, confidence_image, patch_size = 9):
     
-def compute_confidence(boundary_pt, confidence_image, unfilled, patch_size = 9):
+    max = np.sum(get_patch(boundary_ptx[0], boundary_pty[0], confidence_image))/patch_size
+    i = 0
+    while i < len(boundary_ptx):
+        curr_patch = get_patch(boundary_ptx[i],boundary_pty[i], confidence_image)
+        curr_max = np.sum(curr_patch)/patch_size
+        if curr_max > max:
+            max = curr_max
+            x = boundary_ptx[i]
+            y = boundary_pty[i]
+        i += 1
+    return max, x, y
     
-    #return np.sum(get_patch(boundary_pt, confidence_image))/patch_size
-    '''
-    x = boundary_pt[0]
-    y = boundary_pt[1]
-
-    pp = np.arange(-1*patch_size, patch_size+1)
-    confidence = 0
+def get_patch(cntr_ptx, cntr_pty, img, patch_size = 9):
     
-    for p in pp:
-        for q in pp:
-            confidence += unfilled[x+p,y+q]
-    confidence /= patch_size
-    confidence_image[x,y] = confidence
-    return confidence_image
-    '''
-    return 1
-
-    
-def get_patch(cntr_pt, img, patch_size = 9):
-    
-    x = cntr_pt[0]
-    y = cntr_pt[1]
+    x = cntr_ptx
+    y = cntr_pty
     p = patch_size // 2
     return img[x-p:x+p+1, y-p:y+p+1]
-
 
 def inpainting(region, size):
     
     return 1
-
 
 if __name__ == '__main__':
     
@@ -86,4 +68,17 @@ if __name__ == '__main__':
     region[np.where(mask == 0)] = 255
     grayscale = region[:,:,0]*.229 + region[:,:,1]*.587 + region[:,:,2]*.114
     grayscale = canny(grayscale, 3, 50, 10)
+    
+    boundary_ptx = np.where(fill_front>0)[0]
+    boundary_pty = np.where(fill_front>0)[1]
+
+    blank = np.where(mask==0)
+    
+    i = 0
+    while i < len(blank[0]):
+        grayscale[blank[0][i],blank[1][i]]=0.1111
+        i += 1
+        
+    
+    #compute_confidence(boundary_ptx, boundary_pty, confidence_image)
     
