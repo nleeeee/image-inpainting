@@ -58,27 +58,19 @@ if __name__ == '__main__':
     mask = imread('input-mask.bmp')
     fill_front = canny(mask, 3)
     
-    # initializa confidence
+    # initialize confidence
     confidence_image = zeros(mask.shape)
-    confidence_image[np.where(mask!=0)] = 1
+    confidence_image[np.where(mask != 0)] = 1
     
     unfilled = mask
-    grad = src[:,:,0]*.229 + src[:,:,1]*.587 + src[:,:,2]*.114
-    region = src
-    region[np.where(mask == 0)] = 255
-    grayscale = region[:,:,0]*.229 + region[:,:,1]*.587 + region[:,:,2]*.114
+    grayscale = src[:,:,0]*.229 + src[:,:,1]*.587 + src[:,:,2]*.114
     grayscale = canny(grayscale, 3, 50, 10)
     
-    boundary_ptx = np.where(fill_front>0)[0]
-    boundary_pty = np.where(fill_front>0)[1]
+    boundary_ptx = np.where(fill_front > 0)[0]
+    boundary_pty = np.where(fill_front > 0)[1]
 
-    blank = np.where(mask==0)
-    
-    i = 0
-    while i < len(blank[0]):
-        grayscale[blank[0][i],blank[1][i]]=0.1111
-        i += 1
-        
+    grayscale[np.where(mask == 0)] = 0.1111  
+    grayscale[np.where(fill_front > 0)] = 0.1111      
     
     #compute_confidence(boundary_ptx, boundary_pty, confidence_image)
     
