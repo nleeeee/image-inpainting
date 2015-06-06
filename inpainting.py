@@ -47,6 +47,10 @@ def get_patch(cntr_ptx, cntr_pty, img, patch_size = 9):
     y = cntr_pty
     p = patch_size // 2
     return img[x-p:x+p+1, y-p:y+p+1]
+    
+def ssd(patch1, patch2):
+
+    return np.sum((patch1.flatten() - patch2.flatten()) ** 2)
 
 def inpainting(region, size):
     
