@@ -8,9 +8,9 @@ from scipy.ndimage import filters
 import matplotlib.pyplot as plt
 from PIL import Image
 from scipy import ndimage
-from canny import canny
+from canny import *
 
-def compute_normal(boundary_pt, normal, patch_size = 9):
+def compute_normal(boundary_pt, fill_front, patch_size = 9):
     
     return 1
     
@@ -68,13 +68,19 @@ if __name__ == '__main__':
     
     unfilled = mask
     grayscale = src[:,:,0]*.229 + src[:,:,1]*.587 + src[:,:,2]*.114
-    grayscale = canny(grayscale, 3, 50, 10)
+    #grayscale = canny(grayscale, 3, 50, 10)
     
     boundary_ptx = np.where(fill_front > 0)[0]
     boundary_pty = np.where(fill_front > 0)[1]
-
-    grayscale[np.where(mask == 0)] = 0.1111  
-    grayscale[np.where(fill_front > 0)] = 0.1111      
     
-    #compute_confidence(boundary_ptx, boundary_pty, confidence_image)
+    # sobel operators
+    dx = ndimage.sobel(grayscale, 0)
+    dy = ndimage.sobel(grayscale, 1)
+    grad = np.hypot(dx, dy) # gradient
+    norm = np.hypot(-dy, dx) # normal
+    
+    grad[np.where(mask == 0)] = 0.1111  
+    grad[np.where(fill_front > 0)] = 0.1111
+    
+    a = compute_confidence(boundary_ptx, boundary_pty, confidence_image)
     
