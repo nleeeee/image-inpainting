@@ -51,7 +51,37 @@ def get_patch(cntr_ptx, cntr_pty, img, patch_size = 9):
 def ssd(patch1, patch2):
 
     return np.sum((patch1.flatten() - patch2.flatten()) ** 2)
-
+    
+def find_exemplar_patch(src, patch, patch_size = 9L):
+    
+    i = 0
+    j = 0
+    
+    xx = np.where(src != 0.1111)[0]
+    yy = np.where(src != 0.1111)[1]
+    print np.where(src != 0.1111)[0].shape
+    best = 0
+    
+    while i < len(xx) - 1:
+        exemplar_patch = get_patch(xx[i], yy[j], src)
+        print i,j
+        if exemplar_patch.shape[0] == patch_size and exemplar_patch.shape[1] == patch_size:
+            if best == 0:
+                best_patch = ssd(get_patch(xx[i], yy[j], src), patch)
+                best = 1
+            if ssd(exemplar_patch, patch) <= best_patch:
+                best_patch = ssd(exemplar_patch, patch)
+        i = i + 1
+        j = j + 1
+    return xx[i], yy[j]
+    
+def find_max_priority(src, boundary_ptx, boundary_pty):
+    
+    i = 0
+    j = 0
+    max = np.sum(get_patch(boundary_ptx[i], boundary_pty[j], src)
+    return 1
+    
 def inpainting(region, size):
     
     return 1
@@ -78,9 +108,15 @@ if __name__ == '__main__':
     dy = ndimage.sobel(grayscale, 1)
     grad = np.hypot(dx, dy) # gradient
     norm = np.hypot(-dy, dx) # normal
-    
+    # np.max(np.linalg.eig(np.dot(np.conjugate(norm).transpose(),norm))[0])
     grad[np.where(mask == 0)] = 0.1111  
     grad[np.where(fill_front > 0)] = 0.1111
     
     a = compute_confidence(boundary_ptx, boundary_pty, confidence_image)
+    grayscale[np.where(mask == 0)] = 0.1111
+    xx = np.where(grayscale != 0.1111)[0]
+    yy = np.where(grayscale != 0.1111)[1]
     
+    #np.linalg.qr(grad)[0]
+    #priority_image = 
+    #find_exemplar_patch(grayscale, get_patch(61,35,grayscale))
