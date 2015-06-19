@@ -10,13 +10,33 @@ from PIL import Image
 from scipy import ndimage
 from canny import *
 
-def find_max_priority(boundary_ptx, boundary_pty, src, patch_size = 9):
+def find_max_priority(boundary_ptx, boundary_pty, confidence_image, grad, norm, patch_size = 9):
+    
+    conf = np.sum(get_patch(boundary_ptx[0], boundary_pty[0], confidence_image))/patch_size
+    max_grad = np.max(np.linalg.qr(get_patch(boundary_ptx[0], boundary_pty[0], grad))[0])
+    norm_v = norm[boundary_ptx[0]][boundary_pty[0]]
+    max = conf*max_grad*norm_v
+    i = 0
+    while i < len(boundary_ptx):
+        curr_patch = get_patch(boundary_ptx[i],boundary_pty[i], src)
+        curr_conf = np.sum(curr_patch)/patch_size
+        curr_grad = np.max(np.linalg.qr(get_patch(boundary_ptx[0], boundary_pty[0], grad))[0])
+        norm_v = norm[boundary_ptx[0]][boundary_pty[0]]
+        curr_data = curr_grad*norm_v
+        curr_p = curr_conf*curr_data
+        if curr_p > max:
+            max = curr_p
+            x = boundary_ptx[i]
+            y = boundary_pty[i]
+        i += 1
+    return max, x, y
+    
+def find_max_priority2(boundary_ptx, boundary_pty, priority_image, patch_size = 9):
     
     max = np.sum(get_patch(boundary_ptx[0], boundary_pty[0], confidence_image))/patch_size
     i = 0
     while i < len(boundary_ptx):
-        curr_patch = get_patch(boundary_ptx[i],boundary_pty[i], src)
-        curr_max = np.sum(curr_patch)/patch_size
+        curr_max = np.sum(get_patch(boundary_ptx[i],boundary_pty[i], src))/patch_size
         if curr_max > max:
             max = curr_max
             x = boundary_ptx[i]
@@ -63,7 +83,7 @@ def find_exemplar_patch(src, x, y, patch, patch_size = 9L):
                     best_patch = exemplar_patch
                     initialized = 1
                 ssd = patch_ssd(exemplar_patch, patch)
-                if ssd <= min_ssd:
+                if ssd < min_ssd:
                     best_patch = exemplar_patch
                     x = filled[0][i]
                     y = filled[1][i]
@@ -110,36 +130,32 @@ if __name__ == '__main__':
     confidence_image = zeros(mask.shape)
     confidence_image[np.where(mask != 0)] = 1
     
-    # todo: create loop here
-    try:
-        while np.where(src2 == 0.1111)[0].shape[0] != 0:
-            grayscale = src[:,:,0]*.229 + src[:,:,1]*.587 + src[:,:,2]*.114
-            fill_front = canny(mask, 1)
-            boundary_ptx = np.where(fill_front > 0)[0]
-            boundary_pty = np.where(fill_front > 0)[1]
-            
-            # sobel operators
-            dx = ndimage.sobel(grayscale, 0)
-            dy = ndimage.sobel(grayscale, 1)
-            grad = np.hypot(dx, dy) # gradient
-            norm = np.hypot(-dy, dx) # normal
-            grad[np.where(mask == 0)] = 0
-            grad[np.where(fill_front > 0)] = 0
-            
-            grayscale /= 255.0
-            grayscale[np.where(mask == 0)] = 0.1111
-            xx = np.where(grayscale != 0.1111)[0]
-            yy = np.where(grayscale != 0.1111)[1]
-            
-            data_term = np.linalg.qr(grad)[0]*norm
-            priority_image = confidence_image*data_term
-            highest_priority = find_max_priority(boundary_ptx, boundary_pty, priority_image)
-            best_patch = find_exemplar_patch(grayscale,highest_priority[1],highest_priority[2], get_patch(highest_priority[1],highest_priority[2],grayscale))
-            c = copy_patch(get_patch(highest_priority[1],highest_priority[2],src2),get_patch(best_patch[1],best_patch[2],src2)) #test 
-            paste_patch(highest_priority[1],highest_priority[2],c,src2) #test
-            confidence_image, mask = update(highest_priority[1],highest_priority[2],confidence_image,mask) #test
-            imsave('inpainted.jpg', src2)
-    except:
-        imsave('inpainted.jpg', src2)
+    while np.where(src2 == 0.1111)[0].shape[0] != 0:
+        grayscale = src[:,:,0]*.229 + src[:,:,1]*.587 + src[:,:,2]*.114
+        fill_front = canny(mask, 1)
+        boundary_ptx = np.where(fill_front > 0)[0]
+        boundary_pty = np.where(fill_front > 0)[1]
         
+        # sobel operators
+        dx = ndimage.sobel(grayscale, 0)
+        dy = ndimage.sobel(grayscale, 1)
+        grad = np.hypot(dx, dy) # gradient
+        norm = np.hypot(-dy, dx) # normal
+        grad[np.where(mask == 0)] = 0
+        grad[np.where(fill_front > 0)] = 0
+        
+        grayscale /= 255.0
+        grayscale[np.where(mask == 0)] = 0.1111
+        xx = np.where(grayscale != 0.1111)[0]
+        yy = np.where(grayscale != 0.1111)[1]
+        
+        data_term = np.linalg.qr(grad)[0]*norm
+        priority_image = confidence_image*data_term
+        #highest_priority = find_max_priority(boundary_ptx, boundary_pty, confidence_image, grad, norm)
+        highest_priority = find_max_priority2(boundary_ptx, boundary_pty, priority_image)
+        best_patch = find_exemplar_patch(grayscale,highest_priority[1],highest_priority[2], get_patch(highest_priority[1],highest_priority[2],grayscale))
+        c = copy_patch(get_patch(highest_priority[1],highest_priority[2],src2),get_patch(best_patch[1],best_patch[2],src2)) #test
+        paste_patch(highest_priority[1],highest_priority[2],c,src2) #test
+        confidence_image, mask = update(highest_priority[1],highest_priority[2],confidence_image,mask) #test
+        imsave('inpainted.jpg', src2)      
     
