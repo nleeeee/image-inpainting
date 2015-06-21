@@ -92,7 +92,7 @@ def find_exemplar_patch(src, x, y, patch, patch_size = 9L):
         i += 1
     return best_patch, x, y
     
-def find_exemplar_patch2(img, x, y, patch, patch_size = 9L):
+def find_exemplar_patch2(img, x, y, patch):
     
     i = 0    
     filled_r = np.where(img[:,:,0] != 0.1111)
@@ -101,20 +101,20 @@ def find_exemplar_patch2(img, x, y, patch, patch_size = 9L):
     initialized = 0
     
     while i < len(xx) - 1:
-        exemplar_patch = get_patch(xx[i], yy[i], src)
+        exemplar_patch = get_patch(xx[i], yy[i], img)
         print i
         if exemplar_patch.shape == (9, 9, 3):
-            if xx[i] != x and yy[i] != y and np.where(exemplar_patch!=0.1111)[0].shape != 0:
+            if xx[i] != x and yy[i] != y and np.where(exemplar_patch==0.1111)[0].shape[0] == 0:
                 if initialized == 0:
                     min_ssd = patch_ssd(get_patch(xx[i], yy[i], img), patch)
-                    exemplar_patch = get_patch(xx[i], yy[i], src)
+                    exemplar_patch = get_patch(xx[i], yy[i], img)
                     best_patch = exemplar_patch
                     initialized = 1
                 ssd = patch_ssd(exemplar_patch, patch)
-                if ssd < min_ssd:
+                if ssd < min_ssd and ssd != 0.0:
                     best_patch = exemplar_patch
-                    x = filled[0][i]
-                    y = filled[1][i]
+                    x = filled_r[0][i]
+                    y = filled_r[1][i]
                     min_ssd = ssd
                     print min_ssd,x,y
         i += 1
@@ -158,7 +158,6 @@ if __name__ == '__main__':
     confidence_image = zeros(mask.shape)
     confidence_image[np.where(mask != 0)] = 1
     
-    '''
     while np.where(src2 == 0.1111)[0].shape[0] != 0:
         grayscale = src[:,:,0]*.229 + src[:,:,1]*.587 + src[:,:,2]*.114
         fill_front = canny(mask, 1)
@@ -166,23 +165,20 @@ if __name__ == '__main__':
         boundary_pty = np.where(fill_front > 0)[1]
         
         # sobel operators
+        #grayscale = ndimage.gaussian_filter(grayscale, 1)
         dx = ndimage.sobel(grayscale, 0)
         dy = ndimage.sobel(grayscale, 1)
-        grad = np.hypot(dx, dy) # gradient
-        norm = np.hypot(-dy, dx) # normal
-        grad[np.where(mask == 0)] = 0
-        grad[np.where(fill_front > 0)] = 0
-        
-        grayscale /= 255.0
+        grad_norm = np.hypot(-dy, dx) # gradient normal
+        norm = canny(mask, 1) # normal
+        grad_norm[np.where(mask == 0)] = 0.1111
+        grad_norm[np.where(fill_front > 0)] = 0.1111
         grayscale[np.where(mask == 0)] = 0.1111
-        xx = np.where(grayscale != 0.1111)[0]
-        yy = np.where(grayscale != 0.1111)[1]
         
-        data_term = np.linalg.qr(grad)[0]*norm
+        data_term = grad_norm*norm
         priority_image = confidence_image*data_term
         #highest_priority = find_max_priority(boundary_ptx, boundary_pty, confidence_image, grad, norm)
         highest_priority = find_max_priority2(boundary_ptx, boundary_pty, priority_image)
-        best_patch = find_exemplar_patch(grayscale,highest_priority[1],highest_priority[2], get_patch(highest_priority[1],highest_priority[2],grayscale))
+        best_patch = find_exemplar_patch2(src2,highest_priority[1],highest_priority[2], get_patch(highest_priority[1],highest_priority[2],src2))
         c = copy_patch(get_patch(highest_priority[1],highest_priority[2],src2),get_patch(best_patch[1],best_patch[2],src2)) #test
         paste_patch(highest_priority[1],highest_priority[2],c,src2) #test
         confidence_image, mask = update(highest_priority[1],highest_priority[2],confidence_image,mask) #test
@@ -198,7 +194,7 @@ if __name__ == '__main__':
     dx = ndimage.sobel(grayscale, 0)
     dy = ndimage.sobel(grayscale, 1)
     grad_norm = np.hypot(-dy, dx) # gradient normal
-    norm = canny(mask, 1, 1) # normal
+    norm = canny(mask, 1) # normal
     grad_norm[np.where(mask == 0)] = 0.1111
     grad_norm[np.where(fill_front > 0)] = 0.1111
     grayscale[np.where(mask == 0)] = 0.1111
@@ -207,11 +203,10 @@ if __name__ == '__main__':
     priority_image = confidence_image*data_term
     #highest_priority = find_max_priority(boundary_ptx, boundary_pty, confidence_image, grad, norm)
     highest_priority = find_max_priority2(boundary_ptx, boundary_pty, priority_image)
-    '''
     best_patch = find_exemplar_patch2(src2,highest_priority[1],highest_priority[2], get_patch(highest_priority[1],highest_priority[2],src2))
     c = copy_patch(get_patch(highest_priority[1],highest_priority[2],src2),get_patch(best_patch[1],best_patch[2],src2)) #test
     paste_patch(highest_priority[1],highest_priority[2],c,src2) #test
     confidence_image, mask = update(highest_priority[1],highest_priority[2],confidence_image,mask) #test
-    imsave('inpainted.jpg', src2)    
+    imsave('inpainted.jpg', src2)
     '''
     
