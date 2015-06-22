@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from PIL import Image
 from scipy import ndimage
 from canny import canny
+from skimage.morphology import erosion, disk
 
 def find_max_priority(boundary_ptx, boundary_pty, confidence_image, grad, norm, patch_size = 9):
     
@@ -64,29 +65,36 @@ def patch_ssd(patch1, patch2):
         i += 1
     return sum
     
-def find_exemplar_patch(src, x, y, patch, patch_size = 9L):
+def patch_ncc(patch1, patch2):
+    
+    i = 0
+    patch1[np.where(patch1==0.1111)] = 0
+    ncc = np.sum((patch1/np.linalg.norm(patch1)) * (patch2/np.linalg.norm(patch2)))
+    return ncc
+    
+def find_exemplar_patch(img, x, y, patch, patch_size = 9L):
     
     i = 0    
-    filled = np.where(src != 0.1111)
+    filled = np.where(img != 0.1111)
     xx = filled[0]
     yy = filled[1]
     initialized = 0
     
     while i < len(xx) - 1:
-        exemplar_patch = get_patch(xx[i], yy[i], src)
+        exemplar_patch = get_patch(xx[i], yy[i], img)
         print i
-        if exemplar_patch.flatten().shape[0] == 81:
+        if exemplar_patch.shape == (9, 9):
             if xx[i] != x and yy[i] != y and np.where(exemplar_patch==0.1111)[0].shape[0] == 0:
                 if initialized == 0:
-                    min_ssd = patch_ssd(get_patch(xx[i], yy[i], src), patch)
-                    exemplar_patch = get_patch(xx[i], yy[i], src)
+                    min_ssd = patch_ssd(get_patch(xx[i], yy[i], img), patch)
+                    exemplar_patch = get_patch(xx[i], yy[i], img)
                     best_patch = exemplar_patch
                     initialized = 1
                 ssd = patch_ssd(exemplar_patch, patch)
-                if ssd < min_ssd:
+                if ssd > min_ssd and ssd != 0.0:
                     best_patch = exemplar_patch
-                    x = filled[0][i]
-                    y = filled[1][i]
+                    x = xx[i]
+                    y = yy[i]
                     min_ssd = ssd
                     print min_ssd,x,y
         i += 1
@@ -113,10 +121,38 @@ def find_exemplar_patch2(img, x, y, patch):
                 ssd = patch_ssd(exemplar_patch, patch)
                 if ssd < min_ssd and ssd != 0.0:
                     best_patch = exemplar_patch
-                    x = filled_r[0][i]
-                    y = filled_r[1][i]
+                    x = xx[i]
+                    y = yy[i]
                     min_ssd = ssd
                     print min_ssd,x,y
+        i += 1
+    return best_patch, x, y
+    
+def find_exemplar_patch3(img, x, y, patch):
+    
+    i = 0    
+    filled_r = np.where(img[:,:,0] != 0.1111)
+    xx = filled_r[0]
+    yy = filled_r[1]
+    initialized = 0
+    
+    while i < len(xx) - 1:
+        exemplar_patch = get_patch(xx[i], yy[i], img)
+        print i
+        if exemplar_patch.shape == (9, 9, 3):
+            if xx[i] != x and yy[i] != y and np.where(exemplar_patch==0.1111)[0].shape[0] == 0:
+                if initialized == 0:
+                    max_ncc = patch_ncc(get_patch(xx[i], yy[i], img), patch)
+                    exemplar_patch = get_patch(xx[i], yy[i], img)
+                    best_patch = exemplar_patch
+                    initialized = 1
+                ncc = patch_ncc(exemplar_patch, patch)
+                if ncc > max_ncc and ncc != 0.0:
+                    best_patch = exemplar_patch
+                    x = xx[i]
+                    y = yy[i]
+                    min_ncc = ncc
+                    print min_ncc,x,y
         i += 1
     return best_patch, x, y
     
@@ -148,14 +184,14 @@ def update(x, y, confidence_image, mask, patch_size = 9):
     
 if __name__ == '__main__':
     
-    src = imread('input.jpg')
+    src = imread('golf.jpg')
     src2 = src/255.0
-    mask = imread('input-mask.bmp')
+    mask = imread('golf-mask.pgm')
     mask /= 255.0
     src2[np.where(mask==0)] = 0.1111
     
     # initialize confidence
-    confidence_image = zeros(mask.shape)
+    confidence_image = np.zeros(mask.shape)
     confidence_image[np.where(mask != 0)] = 1
     
     # while np.where(src2 == 0.1111)[0].shape[0] != 0:
@@ -182,26 +218,30 @@ if __name__ == '__main__':
     #     c = copy_patch(get_patch(highest_priority[1],highest_priority[2],src2),get_patch(best_patch[1],best_patch[2],src2)) #test
     #     paste_patch(highest_priority[1],highest_priority[2],c,src2) #test
     #     confidence_image, mask = update(highest_priority[1],highest_priority[2],confidence_image,mask) #test
-    #     imsave('inpainted.jpg', src2)      
+    #     imsave('inpainted.jpg', src2)    
     
-    
-    grayscale = src[:,:,0]*.229 + src[:,:,1]*.587 + src[:,:,2]*.114
-    fill_front = canny(mask, 1)
-    boundary_ptx = np.where(fill_front > 0)[0]
-    boundary_pty = np.where(fill_front > 0)[1]
-    
-    # sobel operators
-    #grayscale = ndimage.gaussian_filter(grayscale, 1)
-    dx = ndimage.sobel(grayscale, 0)
-    dy = ndimage.sobel(grayscale, 1)
-    grad_norm = np.hypot(-dy, dx) # gradient normal
-    #norm = canny(mask, 1) # normal
-    norm = np.hypot(dx, dy)
-    grad_norm[np.where(mask == 0)] = 0.1111
-    
-    highest_priority = find_max_priority(boundary_ptx, boundary_pty, confidence_image, grad_norm, norm)
-    best_patch = find_exemplar_patch2(src2,highest_priority[1],highest_priority[2], get_patch(highest_priority[1],highest_priority[2],src2))
-    c = copy_patch(get_patch(highest_priority[1],highest_priority[2],src2),get_patch(best_patch[1],best_patch[2],src2)) #test
-    paste_patch(highest_priority[1],highest_priority[2],c,src2) #test
-    confidence_image, mask = update(highest_priority[1],highest_priority[2],confidence_image,mask) #test
-    imsave('inpainted.jpg', src2)
+    while np.where(src2 == 0.1111)[0].shape[0] != 0:
+        grayscale = src[:,:,0]*.229 + src[:,:,1]*.587 + src[:,:,2]*.114
+        fill_front = mask - erosion(mask, disk(1))
+        boundary_ptx = np.where(fill_front > 0)[0]
+        boundary_pty = np.where(fill_front > 0)[1]
+        
+        # sobel operators
+        #grayscale = ndimage.gaussian_filter(grayscale, 1)
+        dx = ndimage.sobel(grayscale, 0)
+        dy = ndimage.sobel(grayscale, 1)
+        nx = ndimage.sobel(fill_front, 0)
+        ny = ndimage.sobel(fill_front, 1)
+        grad_norm = np.hypot(-dx, dy) # gradient normal
+        norm = np.hypot(ny, nx)
+        #norm = np.hypot(dy, dx)
+        grad_norm[np.where(mask == 0)] = 0.1111
+        grayscale[np.where(mask == 0)] = 0.1111
+        
+        highest_priority = find_max_priority(boundary_ptx, boundary_pty, confidence_image, grad_norm, norm)
+        best_patch = find_exemplar_patch3(src2,highest_priority[1],highest_priority[2], get_patch(highest_priority[1],highest_priority[2],src2))
+        c = copy_patch(get_patch(highest_priority[1],highest_priority[2],src2),get_patch(best_patch[1],best_patch[2],src2)) #test
+        paste_patch(highest_priority[1],highest_priority[2],c,src2) #test
+        confidence_image, mask = update(highest_priority[1],highest_priority[2],confidence_image,mask) #test
+        imsave('inpainted.jpg', src2)
+        
