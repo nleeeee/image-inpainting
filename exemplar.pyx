@@ -1,6 +1,5 @@
 import numpy as np
 cimport numpy as np
-#from inpainting import get_patch
 
 ctypedef np.float64_t DTYPE_t
 
