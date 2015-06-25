@@ -37,7 +37,11 @@ cpdef find_max_priority(np.ndarray[DTYPEi_t, ndim=1] boundary_ptx,
                         np.ndarray[DTYPE_t, ndim=2] dy,
                         np.ndarray nx,
                         np.ndarray ny,
-                        patch_size = 9):
+                        patch_size = 9,
+                        alpha = 255.0):
+    
+    dx[np.where(dx == 0.00001111)] = 0.0
+    dy[np.where(dy == 0.00001111)] = 0.0
     
     cdef: 
         float conf = np.sum(get_patch(boundary_ptx[0],
@@ -52,32 +56,28 @@ cpdef find_max_priority(np.ndarray[DTYPEi_t, ndim=1] boundary_ptx,
                                                           boundary_pty[0], 
                                                           dy, 
                                                           patch_size))
-        #float Nx = nx[boundary_ptx[0]][boundary_pty[0]]
-        #float Ny = ny[boundary_ptx[0]][boundary_pty[0]]
+        float Nx = nx[boundary_ptx[0]][boundary_pty[0]]
+        float Ny = ny[boundary_ptx[0]][boundary_pty[0]]
     
         int x = boundary_ptx[0]
         int y = boundary_pty[0]
-    
-    
-        np.ndarray Nx = get_patch(boundary_ptx[0], 
-                                    boundary_pty[0], 
-                                    nx, 
-                                    patch_size)
-        np.ndarray Ny = get_patch(boundary_ptx[0], 
-                                    boundary_pty[0], 
-                                    ny, 
-                                    patch_size)
-    
+    '''
+    np.ndarray Nx = get_patch(boundary_ptx[0], 
+                                boundary_pty[0], 
+                                nx, 
+                                patch_size)
+    np.ndarray Ny = get_patch(boundary_ptx[0], 
+                                boundary_pty[0], 
+                                ny, 
+                                patch_size)
+    '''
         
-    gradx[np.where(gradx == 0.00001111)] = 0.0
-    grady[np.where(grady == 0.00001111)] = 0.0
         
     cdef:
         float max_gradx = np.max(gradx)
         float max_grady = np.max(grady)
-        float data = np.sum(max_gradx * Nx + max_grady * Ny)
-        #float alpha = np.sum(np.sqrt(max_gradx ** 2 + max_grady ** 2) * np.sqrt(Nx ** 2 + Ny ** 2))
-        float max = conf * abs(data)
+        float data = abs(max_gradx * Nx + max_grady * Ny) / alpha
+        float max = conf * data
         int i = 0
         float curr_data = 0, curr_conf = 0, curr_grad = 0
     
@@ -87,20 +87,18 @@ cpdef find_max_priority(np.ndarray[DTYPEi_t, ndim=1] boundary_ptx,
                                confidence_image, 
                                patch_size)
         curr_conf = np.sum(curr_patch)/(patch_size ** 2)
-        '''
-        max_gradx = np.max(get_patch(boundary_ptx[i],
+        max_gradx = np.max(abs(get_patch(boundary_ptx[i],
                                          boundary_pty[i],
                                          dx, 
-                                         patch_size))
-        max_grady = np.max(get_patch(boundary_ptx[i],
+                                         patch_size)))
+        max_grady = np.max(abs(get_patch(boundary_ptx[i],
                                          boundary_pty[i],
                                          dy, 
-                                         patch_size))
+                                         patch_size)))
+        Nx = nx[boundary_ptx[i]][boundary_pty[i]]
+        Ny = ny[boundary_ptx[i]][boundary_pty[i]]
+        curr_data = abs(max_gradx * Nx + max_grady * Ny) / alpha
         '''
-        #Nx = nx[boundary_ptx[i]][boundary_pty[i]]
-        #Ny = ny[boundary_ptx[i]][boundary_pty[i]]
-        #curr_data = abs(max_gradx * Nx + max_grady * Ny)
-        
         gradx = get_patch(boundary_ptx[i], 
                           boundary_pty[i], 
                           dx, 
@@ -119,9 +117,8 @@ cpdef find_max_priority(np.ndarray[DTYPEi_t, ndim=1] boundary_ptx,
                        patch_size)
         
         curr_data = np.sum((max_gradx * Nx + max_grady * Ny))
-        #alpha = np.sum(np.sqrt(max_gradx ** 2 + max_grady ** 2) * np.sqrt(Nx ** 2 + Ny ** 2))
-        #print alpha
-        curr_p = curr_conf * abs(curr_data)
+        '''
+        curr_p = curr_conf * curr_data
         if curr_p > max:
             max = curr_p
             x = boundary_ptx[i]
