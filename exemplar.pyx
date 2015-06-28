@@ -48,14 +48,16 @@ cpdef find_max_priority(np.ndarray[DTYPEi_t, ndim=1] boundary_ptx,
                                       boundary_pty[0], 
                                       confidence_image, 
                                       patch_size))/(patch_size ** 2)
-        np.ndarray[DTYPE_t, ndim=2] gradx = abs(get_patch(boundary_ptx[0], 
-                                                          boundary_pty[0], 
-                                                          dx, 
-                                                          patch_size))
-        np.ndarray[DTYPE_t, ndim=2] grady = abs(get_patch(boundary_ptx[0], 
-                                                          boundary_pty[0], 
-                                                          dy, 
-                                                          patch_size))
+        np.ndarray[DTYPE_t, ndim=2] grad = np.hypot(dx, dy)
+        np.ndarray[DTYPE_t, ndim=2] grad_patch = abs(get_patch(boundary_ptx[0],
+                                                               boundary_pty[0],
+                                                               grad,
+                                                               patch_size))
+    cdef:
+        int xx = np.where(grad_patch == np.max(grad_patch))[0][0]
+        int yy = np.where(grad_patch == np.max(grad_patch))[1][0]
+        float max_gradx = dx[xx][yy]
+        float max_grady = dy[xx][yy]
         float Nx = nx[boundary_ptx[0]][boundary_pty[0]]
         float Ny = ny[boundary_ptx[0]][boundary_pty[0]]
     
@@ -63,20 +65,18 @@ cpdef find_max_priority(np.ndarray[DTYPEi_t, ndim=1] boundary_ptx,
         int y = boundary_pty[0]
     '''
     np.ndarray Nx = get_patch(boundary_ptx[0], 
-                                boundary_pty[0], 
-                                nx, 
-                                patch_size)
+                              boundary_pty[0], 
+                              nx, 
+                              patch_size)
     np.ndarray Ny = get_patch(boundary_ptx[0], 
-                                boundary_pty[0], 
-                                ny, 
-                                patch_size)
+                              boundary_pty[0], 
+                              ny, 
+                              patch_size)
     '''
         
         
     cdef:
-        float max_gradx = np.max(gradx)
-        float max_grady = np.max(grady)
-        float data = abs(max_gradx * Nx + max_grady * Ny) / (sqrt(Nx ** 2 + Ny ** 2))
+        float data = abs(-max_grady * Ny + max_gradx * Nx) / (sqrt(Nx ** 2 + Ny ** 2))
         float max = conf * (data / alpha)
         int i = 0
         float curr_data = 0, curr_conf = 0, curr_grad = 0
@@ -87,17 +87,17 @@ cpdef find_max_priority(np.ndarray[DTYPEi_t, ndim=1] boundary_ptx,
                                confidence_image, 
                                patch_size)
         curr_conf = np.sum(curr_patch)/(patch_size ** 2)
-        max_gradx = np.max(abs(get_patch(boundary_ptx[i],
-                                         boundary_pty[i],
-                                         dx, 
-                                         patch_size)))
-        max_grady = np.max(abs(get_patch(boundary_ptx[i],
-                                         boundary_pty[i],
-                                         dy, 
-                                         patch_size)))
+        grad_patch = abs(get_patch(boundary_ptx[i],
+                                   boundary_pty[i],
+                                   grad,
+                                   patch_size))
+        xx = np.where(grad_patch == np.max(grad_patch))[0][0]
+        yy = np.where(grad_patch == np.max(grad_patch))[1][0]
+        max_gradx = dx[xx][yy]
+        max_grady = dy[xx][yy]            
         Nx = nx[boundary_ptx[i]][boundary_pty[i]]
         Ny = ny[boundary_ptx[i]][boundary_pty[i]]
-        curr_data = abs(max_gradx * Nx + max_grady * Ny) / (sqrt(Nx ** 2 + Ny ** 2))
+        curr_data = abs(-max_grady * Nx + max_gradx * Ny) / (sqrt(Nx ** 2 + Ny ** 2))
         '''
         gradx = get_patch(boundary_ptx[i], 
                           boundary_pty[i], 
@@ -128,14 +128,14 @@ cpdef find_max_priority(np.ndarray[DTYPEi_t, ndim=1] boundary_ptx,
 
 cpdef patch_ncc(np.ndarray[DTYPE_t, ndim=3] patch1, 
                 np.ndarray[DTYPE_t, ndim=3] patch2):
-    
-    cdef:
-        int i = 0
-        int m = patch1.shape[0]
-        int n = patch1.shape[1]
-        np.ndarray[DTYPE_t, ndim=3] patch3 = patch2[:m, :n, :]
+
+    '''
+    int m = patch1.shape[0]
+    int n = patch1.shape[1]
+    np.ndarray[DTYPE_t, ndim=3] patch3 = patch2[:m, :n, :]
+    '''
     patch1[np.where(patch1 == 0.00001111)] = 0.0
-    cdef float ncc = np.sum((patch1/np.linalg.norm(patch1)) * (patch3/np.linalg.norm(patch3)))
+    cdef float ncc = np.sum((patch1/np.linalg.norm(patch1)) * (patch2/np.linalg.norm(patch2)))
     return ncc
     
 cpdef patch_ssd(np.ndarray[DTYPE_t, ndim=3] patch1, 
