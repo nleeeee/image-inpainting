@@ -17,7 +17,7 @@ cpdef get_patch(cntr_ptx, cntr_pty, np.ndarray img, patch_size = 9):
 cpdef copy_patch(np.ndarray[DTYPE_t, ndim=3] patch1, 
                  np.ndarray[DTYPE_t, ndim=3] patch2):
     
-    unfilled = np.where(patch1[:,:,0] == 0.00001111)
+    unfilled = np.where(patch1[:,:,1] == 1.0)
     
     cdef:
         np.ndarray[DTYPEi_t, ndim=1] xx = unfilled[0]
@@ -60,20 +60,12 @@ cpdef find_max_priority(np.ndarray[DTYPEi_t, ndim=1] boundary_ptx,
     
         int x = boundary_ptx[0]
         int y = boundary_pty[0]
-    '''
-    np.ndarray Nx = get_patch(boundary_ptx[0], 
-                              boundary_pty[0], 
-                              nx, 
-                              patch_size)
-    np.ndarray Ny = get_patch(boundary_ptx[0], 
-                              boundary_pty[0], 
-                              ny, 
-                              patch_size)
-    '''
         
-    cdef float data = abs(-max_grady * Nx + max_gradx * Ny)
+        float data = abs(max_gradx * Nx + max_grady * Ny)
+        
     if (Nx ** 2 + Ny ** 2) != 0:
         data /= (Nx ** 2 + Ny ** 2)
+        
     cdef:
         float max = conf * (data / alpha)
         int i = 0
@@ -95,29 +87,9 @@ cpdef find_max_priority(np.ndarray[DTYPEi_t, ndim=1] boundary_ptx,
         max_grady = dy[xx][yy]            
         Nx = nx[boundary_ptx[i]][boundary_pty[i]]
         Ny = ny[boundary_ptx[i]][boundary_pty[i]]
-        curr_data = abs(-max_grady * Nx + max_gradx * Ny)
+        curr_data = abs(max_gradx * Nx + max_grady * Ny)
         if (Nx ** 2 + Ny ** 2) != 0:
             curr_data /= (sqrt(Nx ** 2 + Ny ** 2))
-        '''
-        gradx = get_patch(boundary_ptx[i], 
-                          boundary_pty[i], 
-                          dx, 
-                          patch_size)
-        grady = get_patch(boundary_ptx[i], 
-                          boundary_pty[i], 
-                          dy, 
-                          patch_size)
-        Nx = get_patch(boundary_ptx[i], 
-                       boundary_pty[i], 
-                       nx, 
-                       patch_size)
-        Ny = get_patch(boundary_ptx[i], 
-                       boundary_pty[i], 
-                       ny, 
-                       patch_size)
-        
-        curr_data = np.sum((max_gradx * Nx + max_grady * Ny))
-        '''
         curr_p = curr_conf * (curr_data / alpha)
         if curr_p > max:
             max = curr_p
@@ -144,9 +116,9 @@ cpdef patch_ssd(np.ndarray[DTYPE_t, ndim=3] patch1,
         float sum = 0
 
     while i <= len - 1:
-        if (patch1r[i] != 0.00001111 and
-            patch1g[i] != 0.00001111 and
-            patch1b[i] != 0.00001111): # ignore unfilled pixels 
+        if (patch1r[i] != 0.0 and
+            patch1g[i] != 1.0 and
+            patch1b[i] != 0.0): # ignore unfilled pixels 
             sum += (patch1r[i] - patch2r[i]) ** 2
             sum += (patch1g[i] - patch2g[i]) ** 2
             sum += (patch1b[i] - patch2b[i]) ** 2
@@ -167,7 +139,7 @@ cpdef find_exemplar_patch_ssd(np.ndarray[DTYPE_t, ndim=3] img,
                                                    offset:y_boundary-offset+1]
         unsigned int i = 0
     
-    filled_r = np.where(img_copy[:,:,0] != 0.00001111)
+    filled_r = np.where(img_copy[:,:,1] != 1.0)
     
     cdef: 
         np.ndarray[DTYPEi_t, ndim=1] xx = filled_r[0]
@@ -180,8 +152,8 @@ cpdef find_exemplar_patch_ssd(np.ndarray[DTYPE_t, ndim=3] img,
             exemplar_patch.shape[1] == patch_size):
             if ((xx[i] + offset) != x and 
                 (yy[i] + offset) != y and 
-                np.where(exemplar_patch == 0.00001111)[0].shape[0] == 0):
-                ssd = patch_ssd(exemplar_patch, patch)
+                np.where(exemplar_patch[:,:,1] == 1.0)[0].shape[0] == 0):
+                ssd = patch_ssd(patch, exemplar_patch)
                 if ssd < min_ssd:
                     best_patch = exemplar_patch
                     best_x = xx[i] + offset
@@ -189,50 +161,3 @@ cpdef find_exemplar_patch_ssd(np.ndarray[DTYPE_t, ndim=3] img,
                     min_ssd = ssd
         i += 1
     return best_patch, best_x, best_y
-    
-cpdef patch_ncc(np.ndarray[DTYPE_t, ndim=3] patch1, 
-                np.ndarray[DTYPE_t, ndim=3] patch2):
-    cdef:
-        int m = patch1.shape[0]
-        int n = patch1.shape[1]
-        np.ndarray[DTYPE_t, ndim=3] patch3 = patch2[:m, :n, :]
-    patch1[np.where(patch1 == 0.00001111)] = 0.0
-    cdef float ncc = np.sum((patch1/np.linalg.norm(patch1)) * (patch3/np.linalg.norm(patch3)))
-    return ncc
-
-cpdef find_exemplar_patch_ncc(np.ndarray[DTYPE_t, ndim=3] img, 
-                              x, 
-                              y, 
-                              np.ndarray[DTYPE_t, ndim=3] patch, 
-                              patch_size = 9):
-    
-    cdef:
-        int offset = patch_size // 2 
-        unsigned int x_boundary = img.shape[0]
-        unsigned int y_boundary = img.shape[1]
-        np.ndarray[DTYPE_t, ndim=3] img_copy = img[offset:x_boundary-offset+1, 
-                                                   offset:y_boundary-offset+1]
-        unsigned int i = 0
-    
-    filled_r = np.where(img_copy[:,:,0] != 0.00001111)
-    
-    cdef:
-        np.ndarray[DTYPEi_t, ndim=1] xx = filled_r[0]
-        np.ndarray[DTYPEi_t, ndim=1] yy = filled_r[1]
-        float max_ncc = -np.inf
-
-    while i < len(xx) - 1:
-        exemplar_patch = get_patch(xx[i] + offset, yy[i] + offset, img, patch_size)
-        if (exemplar_patch.shape[0] == patch_size and 
-            exemplar_patch.shape[1] == patch_size):
-            if ((xx[i] + offset) != x and 
-                (yy[i] + offset) != y and 
-                np.where(exemplar_patch == 0.00001111)[0].shape[0] == 0):
-                ncc = patch_ncc(exemplar_patch, patch)
-                if ncc > max_ncc:
-                    best_patch = exemplar_patch
-                    x = xx[i] + offset
-                    y = yy[i] + offset
-                    max_ncc = ncc
-        i += 1
-    return best_patch, x, y
