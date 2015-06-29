@@ -24,8 +24,8 @@ def update(x, y, confidence_image, mask, patch_size = 9):
     
 if __name__ == '__main__':
     
-    src = imread('input.jpg')
-    mask = imread('input-mask.bmp')
+    src = imread('golf.jpg')
+    mask = imread('golf-mask.pgm')
     mask /= 255.0
     src2 = src/255.0
     
@@ -40,14 +40,13 @@ if __name__ == '__main__':
     
     grayscale = src[:,:,0]*.2125 + src[:,:,1]*.7154 + src[:,:,2]*.0721
     grayscale /= 255.0
+    grayscale = ndimage.gaussian_filter(grayscale, 0.5) # gaussian smoothing for computing gradients
     
     while mask.any():
         fill_front = mask - erosion(mask, disk(1))
         # pixels where the fill front is located
         boundary_ptx = np.where(fill_front > 0)[0]
         boundary_pty = np.where(fill_front > 0)[1]
-        
-        #grayscale = ndimage.gaussian_filter(grayscale, 0.5) # gaussian smoothing for computing gradients
         
         # compute gradients with sobel operators        
         dx = ndimage.sobel(grayscale, 0)
@@ -67,19 +66,16 @@ if __name__ == '__main__':
                                              nx,
                                              ny,
                                              patch_size)
-        best_patch = find_exemplar_patch_ncc(src2, 
+        max_patch = get_patch(highest_priority[1],
+                              highest_priority[2],
+                              src2, 
+                              patch_size)
+        best_patch = find_exemplar_patch_ssd(src2, 
                                              highest_priority[1], 
                                              highest_priority[2],           
-                                             get_patch(highest_priority[1],
-                                                       highest_priority[2],
-                                                       src2,
-                                                       patch_size),
+                                             max_patch,
                                              patch_size)
-        c = copy_patch(get_patch(highest_priority[1],
-                                 highest_priority[2],
-                                 src2, 
-                                 patch_size), 
-                       best_patch[0])
+        c = copy_patch(max_patch, best_patch[0])
         src2 = paste_patch(highest_priority[1],
                            highest_priority[2],
                            c,
