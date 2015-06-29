@@ -6,8 +6,8 @@ from scipy.ndimage import filters
 from PIL import Image
 from scipy import ndimage
 from skimage.morphology import erosion, disk
-from sklearn.preprocessing import normalize
 from exemplar import *
+from sklearn.preprocessing import normalize
 
 def paste_patch(x, y, patch, img, patch_size = 9):
     
@@ -33,61 +33,41 @@ if __name__ == '__main__':
     confidence_image = np.zeros(mask.shape)
     confidence_image[np.where(mask != 0)] = 1
     
-    src2[np.where(mask == 0.0)] = 0.00001111 # place holder value for unfilled pixels
+    src2[np.where(mask == 0.0)] = [0.0, 1.0, 0.0] # place holder value for unfilled pixels
     
     patch_count = 0
-    patch_size = 15 # must be odd
+    patch_size = 9 # must be odd
     
-    while np.where(src2 == 0.00001111)[0].shape[0] != 0:
-        #grayscale = src2[:,:,0]*.229 + src2[:,:,1]*.587 + src2[:,:,2]*.114
+    grayscale = src[:,:,0]*.2125 + src[:,:,1]*.7154 + src[:,:,2]*.0721
+    grayscale /= 255.0
+    
+    while mask.any():
         fill_front = mask - erosion(mask, disk(1))
         # pixels where the fill front is located
         boundary_ptx = np.where(fill_front > 0)[0]
         boundary_pty = np.where(fill_front > 0)[1]
         
-        #grayscale = ndimage.gaussian_filter(grayscale, 1) # gaussian smoothing prior to calculating gradients
-        #grayscale[np.where(mask == 0.0)] = 0.0
-        #plt.show(imshow(grayscale))
+        #grayscale = ndimage.gaussian_filter(grayscale, 0.5) # gaussian smoothing for computing gradients
         
-        # compute gradients with sobel operators
-        
-        dx_r = ndimage.sobel(src2[:,:,0], 0)
-        dy_r = ndimage.sobel(src2[:,:,0], 1)
-        dx_g = ndimage.sobel(src2[:,:,1], 0)
-        dy_g = ndimage.sobel(src2[:,:,1], 1)
-        dx_b = ndimage.sobel(src2[:,:,2], 0)
-        dy_b = ndimage.sobel(src2[:,:,2], 1)
-        dx = (dx_r + dx_g + dx_b) / 3
-        dy = (dy_r + dy_g + dy_b) / 3
-        
-
-        #dx = ndimage.sobel(grayscale, 0)
-        #dy = ndimage.sobel(grayscale, 1)
-        
+        # compute gradients with sobel operators        
+        dx = ndimage.sobel(grayscale, 0)
+        dy = ndimage.sobel(grayscale, 1)
         # compute normals
-        nx = ndimage.sobel(fill_front, 0)
-        ny = ndimage.sobel(fill_front, 1)
-        # normalize rows
-        #nx /= nx.sum(axis=1)[:,np.newaxis]
-        #ny /= ny.sum(axis=1)[:,np.newaxis]
-        #nx = normalize(nx, norm='l1', axis=1)
-        #ny = normalize(ny, norm='l1', axis=1)
-        N = np.hypot(ny, nx)
-        N = normalize(N, norm='l2', axis=0)
-        nx /= N
-        ny /= N
-        dx[np.where(mask == 0)] = 0.00001111
-        dy[np.where(mask == 0)] = 0.00001111
+        nx = ndimage.sobel(mask, 0)
+        ny = ndimage.sobel(mask, 1)
+        
+        dx[np.where(mask == 0)] = 0.0
+        dy[np.where(mask == 0)] = 0.0
         
         highest_priority = find_max_priority(boundary_ptx, 
                                              boundary_pty, 
                                              confidence_image, 
-                                             -dx,
-                                             dy,
-                                             ny,
+                                             -dy,
+                                             dx,
                                              nx,
+                                             ny,
                                              patch_size)
-        best_patch = find_exemplar_patch_ssd(src2, 
+        best_patch = find_exemplar_patch_ncc(src2, 
                                              highest_priority[1], 
                                              highest_priority[2],           
                                              get_patch(highest_priority[1],
