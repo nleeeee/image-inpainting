@@ -10,12 +10,58 @@ from exemplar import *
 from sklearn.preprocessing import normalize
 
 def paste_patch(x, y, patch, img, patch_size = 9):
+    '''Updates the confidence values and mask image for the image to be
+    to be inpainted.
+    
+    Parameters
+    ----------
+    x : int
+        x coordinate of the centre of the patch which has been filled.
+    y : int 
+        y coordinate of the centre of the patch which has been filled.
+    patch : 3-D array
+        The patch which has been filled with information from the exemplar patch
+    img : 3-D array
+        The target image with the unfilled regions.
+    patch_size : int
+        Dimensions of the patch; must be odd.
+        
+    Returns
+    -------
+    img : 3-D array
+        The target image after it has been updated with the new filled patch.
+    '''
     
     p = patch_size // 2
     img[x-p:x+p+1, y-p:y+p+1] = patch
     return img
     
 def update(x, y, confidence, mask, patch_size = 9):
+    '''Updates the confidence values and mask image for the image to be
+    to be inpainted.
+    
+    Parameters
+    ----------
+    x : int
+        x coordinate of the centre of the patch which has been filled.
+    y : int 
+        y coordinate of the centre of the patch which has been filled.
+    confidence : 2-D array
+        2-D array holding confidence values for the image to be inpainted.
+    mask : 2-D array
+        A binary image specifying regions to be inpainted with a value of 0 
+        and 1 elsewhere.
+    patch_size : int
+        Dimensions of the patch; must be odd.
+        
+    Returns
+    -------
+    confidence : 2-D array
+        2-D array holding confidence values for the image to be inpainted.
+    mask : 2-D array
+        A binary image specifying regions to be inpainted with a value of 0 
+        and 1 elsewhere.
+    '''
     
     p = patch_size // 2
     confidence[x-p:x+p+1, y-p:y+p+1] = 1
@@ -25,7 +71,7 @@ def update(x, y, confidence, mask, patch_size = 9):
 if __name__ == '__main__':
     
     src = imread('golf.jpg') # source image
-    mask = imread('golf-mask.pgm') # mask
+    mask = imread('golf-mask.pgm') # mask; binary image specifying unfilled regions with a value of 0
     mask /= 255.0
     unfilled_img = src/255.0
     
@@ -77,7 +123,11 @@ if __name__ == '__main__':
                                              max_patch,
                                              patch_size)
         copied_patch = copy_patch(max_patch, best_patch[0])
-        unfilled_img = paste_patch(max_x, max_y, copied_patch, unfilled_img, patch_size)
+        unfilled_img = paste_patch(max_x, 
+                                   max_y, 
+                                   copied_patch, 
+                                   unfilled_img, 
+                                   patch_size)
         confidence_image, mask = update(max_x,
                                         max_y, 
                                         confidence,
