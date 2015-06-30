@@ -229,8 +229,8 @@ cpdef find_exemplar_patch_ssd(np.ndarray[DTYPE_t, ndim=3] img,
                               y, 
                               np.ndarray[DTYPE_t, ndim=3] patch, 
                               patch_size = 9):
-    '''Copies the values from patch_src to patch_dst at where patch_dst has
-    values specifying an unfilled region ([0.0, 1.0, 0.0]).
+    '''Finds the best exemplar patch with the minimum sum of squared 
+    differences.
     
     Parameters
     ----------
