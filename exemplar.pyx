@@ -78,7 +78,9 @@ cpdef find_max_priority(np.ndarray[DTYPEi_t, ndim=1] boundary_ptx,
                         np.ndarray ny,
                         patch_size,
                         alpha = 255.0):
-    '''
+    '''Finds the patch centered at pixels along the fill front which has the 
+    highest priority value.
+    
     Parameters
     ----------
     boundary_ptx : 1-D array
