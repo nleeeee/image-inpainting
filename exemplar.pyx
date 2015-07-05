@@ -54,7 +54,7 @@ cpdef copy_patch(np.ndarray[DTYPE_t, ndim=3] patch_dst,
     '''
     
     # find locations of unfilled pixels
-    unfilled_pixels = np.where(patch_dst[:,:,1] == 1.0)
+    unfilled_pixels = np.where(patch_dst[:,:,1] == 0.9999)
     
     cdef:
         # x coordinates of unfilled pixels
@@ -63,7 +63,7 @@ cpdef copy_patch(np.ndarray[DTYPE_t, ndim=3] patch_dst,
         np.ndarray[DTYPEi_t, ndim=1] unf_y = unfilled_pixels[1]
         int i = 0
 
-    while i <= len(xx) - 1:
+    while i <= len(unf_x) - 1:
         patch_dst[unf_x[i]][unf_y[i]] = patch_src[unf_x[i]][unf_y[i]]
         i += 1
     
@@ -216,7 +216,7 @@ cpdef patch_ssd(np.ndarray[DTYPE_t, ndim=3] patch_dst,
 
     while i <= len - 1:
         if (patch_dst_r[i] != 0.0 and
-            patch_dst_r[i] != 1.0 and
+            patch_dst_r[i] != 0.9999 and
             patch_dst_r[i] != 0.0): # ignore unfilled pixels 
             sum += (patch_dst_r[i] - patch_src_r[i]) ** 2
             sum += (patch_dst_g[i] - patch_src_g[i]) ** 2
@@ -245,7 +245,7 @@ cpdef find_exemplar_patch_ssd(np.ndarray[DTYPE_t, ndim=3] img,
     patch : 3-D array
         The patch centered at (x, y) with the highest priority value and an 
         unfilled region.
-    patch_size:
+    patch_size : int
         Dimensions of the patch size; must be odd.
         
     Returns
@@ -270,7 +270,7 @@ cpdef find_exemplar_patch_ssd(np.ndarray[DTYPE_t, ndim=3] img,
                                                    offset:y_boundary-offset+1]
         
     # locations of the unfilled region
-    filled_r = np.where(img_copy[:,:,1] != 1.0)
+    filled_r = np.where(img_copy[:,:,1] != 0.9999)
     
     cdef:
         # x coordinates of the unfilled region
@@ -286,7 +286,7 @@ cpdef find_exemplar_patch_ssd(np.ndarray[DTYPE_t, ndim=3] img,
             # and if the potential exemplar patch has no unfilled regions
             if ((xx[i] + offset) != x and 
                 (yy[i] + offset) != y and 
-                np.where(exemplar_patch[:,:,1] == 1.0)[0].shape[0] == 0):
+                np.where(exemplar_patch[:,:,1] == 0.9999)[0].shape[0] == 0):
                 ssd = patch_ssd(patch, exemplar_patch)
                 if ssd < min_ssd:
                     best_patch = exemplar_patch

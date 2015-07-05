@@ -79,16 +79,16 @@ if __name__ == '__main__':
     confidence = np.zeros(mask.shape)
     confidence[np.where(mask != 0)] = 1
     
-    unfilled_img[np.where(mask == 0.0)] = [0.0, 1.0, 0.0] # place holder value for unfilled pixels
+    unfilled_img[np.where(mask == 0.0)] = [0.0, 0.9999, 0.0] # place holder value for unfilled pixels
     
     patch_count = 0
-    patch_size = 11 # must be odd
+    patch_size = 13 # must be odd
     
     grayscale = src[:,:,0]*.2125 + src[:,:,1]*.7154 + src[:,:,2]*.0721
     grayscale /= 255.0
-    grayscale = ndimage.gaussian_filter(grayscale, 0.5) # gaussian smoothing for computing gradients
+    #grayscale = ndimage.gaussian_filter(grayscale, 0.5) # gaussian smoothing for computing gradients
     
-    while mask.any():
+    while np.where(mask == 0)[0].any():
         fill_front = mask - erosion(mask, disk(1)) # boundary of unfilled region
         # pixels where the fill front is located
         boundary_ptx = np.where(fill_front > 0)[0] # x coordinates
@@ -97,20 +97,19 @@ if __name__ == '__main__':
         # compute gradients with sobel operators        
         dx = ndimage.sobel(grayscale, 0)
         dy = ndimage.sobel(grayscale, 1)
+        dx[np.where(mask == 0)] = 0.0
+        dy[np.where(mask == 0)] = 0.0
         # compute normals
         nx = ndimage.sobel(mask, 0)
         ny = ndimage.sobel(mask, 1)
         
-        dx[np.where(mask == 0)] = 0.0
-        dy[np.where(mask == 0)] = 0.0
-        
         highest_priority = find_max_priority(boundary_ptx, 
                                              boundary_pty, 
                                              confidence, 
-                                             -dy,
+                                            -dy,
                                              dx,
+                                            -ny,
                                              nx,
-                                             ny,
                                              patch_size)
                                              
         max_x = highest_priority[1]
@@ -137,4 +136,4 @@ if __name__ == '__main__':
         print patch_count, 'patches inpainted', highest_priority[1:], '<-', best_patch[1:]
         imsave('inpainted.jpg', unfilled_img)
         
-    plt.show(imshow(src2))    
+    plt.show(imshow(unfilled_img))    
