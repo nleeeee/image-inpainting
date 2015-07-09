@@ -148,7 +148,7 @@ cpdef find_max_priority(np.ndarray[DTYPEi_t, ndim=1] boundary_ptx,
         
     cdef:
         float max = conf * (data / alpha) # initial priority value
-        int i = 0
+        int i = 1
         float curr_data = 0, curr_conf = 0, curr_grad = 0
     # iterate through all patches centered at a pixel on the boundary of 
     # unfilled region to find the patch with the highest priority value
@@ -216,8 +216,8 @@ cpdef patch_ssd(np.ndarray[DTYPE_t, ndim=3] patch_dst,
 
     while i <= len - 1:
         if (patch_dst_r[i] != 0.0 and
-            patch_dst_r[i] != 0.9999 and
-            patch_dst_r[i] != 0.0): # ignore unfilled pixels 
+            patch_dst_g[i] != 0.9999 and
+            patch_dst_b[i] != 0.0): # ignore unfilled pixels 
             sum += (patch_dst_r[i] - patch_src_r[i]) ** 2
             sum += (patch_dst_g[i] - patch_src_g[i]) ** 2
             sum += (patch_dst_b[i] - patch_src_b[i]) ** 2

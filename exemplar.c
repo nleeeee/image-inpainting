@@ -2720,7 +2720,7 @@ static PyObject *__pyx_f_8exemplar_find_max_priority(PyArrayObject *__pyx_v_boun
  * 
  *     cdef:
  *         float max = conf * (data / alpha) # initial priority value             # <<<<<<<<<<<<<<
- *         int i = 0
+ *         int i = 1
  *         float curr_data = 0, curr_conf = 0, curr_grad = 0
  */
   __pyx_t_1 = PyFloat_FromDouble(__pyx_v_conf); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 150; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
@@ -2741,15 +2741,15 @@ static PyObject *__pyx_f_8exemplar_find_max_priority(PyArrayObject *__pyx_v_boun
   /* "exemplar.pyx":151
  *     cdef:
  *         float max = conf * (data / alpha) # initial priority value
- *         int i = 0             # <<<<<<<<<<<<<<
+ *         int i = 1             # <<<<<<<<<<<<<<
  *         float curr_data = 0, curr_conf = 0, curr_grad = 0
  *     # iterate through all patches centered at a pixel on the boundary of
  */
-  __pyx_v_i = 0;
+  __pyx_v_i = 1;
 
   /* "exemplar.pyx":152
  *         float max = conf * (data / alpha) # initial priority value
- *         int i = 0
+ *         int i = 1
  *         float curr_data = 0, curr_conf = 0, curr_grad = 0             # <<<<<<<<<<<<<<
  *     # iterate through all patches centered at a pixel on the boundary of
  *     # unfilled region to find the patch with the highest priority value
@@ -4142,7 +4142,7 @@ static PyObject *__pyx_f_8exemplar_patch_ssd(PyArrayObject *__pyx_v_patch_dst, P
  * 
  *     while i <= len - 1:             # <<<<<<<<<<<<<<
  *         if (patch_dst_r[i] != 0.0 and
- *             patch_dst_r[i] != 0.9999 and
+ *             patch_dst_g[i] != 0.9999 and
  */
   while (1) {
     __pyx_t_11 = ((__pyx_v_i <= (__pyx_v_len - 1)) != 0);
@@ -4152,8 +4152,8 @@ static PyObject *__pyx_f_8exemplar_patch_ssd(PyArrayObject *__pyx_v_patch_dst, P
  * 
  *     while i <= len - 1:
  *         if (patch_dst_r[i] != 0.0 and             # <<<<<<<<<<<<<<
- *             patch_dst_r[i] != 0.9999 and
- *             patch_dst_r[i] != 0.0): # ignore unfilled pixels
+ *             patch_dst_g[i] != 0.9999 and
+ *             patch_dst_b[i] != 0.0): # ignore unfilled pixels
  */
     __pyx_t_12 = __pyx_v_i;
     __pyx_t_13 = -1;
@@ -4175,21 +4175,21 @@ static PyObject *__pyx_f_8exemplar_patch_ssd(PyArrayObject *__pyx_v_patch_dst, P
     /* "exemplar.pyx":219
  *     while i <= len - 1:
  *         if (patch_dst_r[i] != 0.0 and
- *             patch_dst_r[i] != 0.9999 and             # <<<<<<<<<<<<<<
- *             patch_dst_r[i] != 0.0): # ignore unfilled pixels
+ *             patch_dst_g[i] != 0.9999 and             # <<<<<<<<<<<<<<
+ *             patch_dst_b[i] != 0.0): # ignore unfilled pixels
  *             sum += (patch_dst_r[i] - patch_src_r[i]) ** 2
  */
     __pyx_t_13 = __pyx_v_i;
     __pyx_t_15 = -1;
     if (__pyx_t_13 < 0) {
-      __pyx_t_13 += __pyx_pybuffernd_patch_dst_r.diminfo[0].shape;
+      __pyx_t_13 += __pyx_pybuffernd_patch_dst_g.diminfo[0].shape;
       if (unlikely(__pyx_t_13 < 0)) __pyx_t_15 = 0;
-    } else if (unlikely(__pyx_t_13 >= __pyx_pybuffernd_patch_dst_r.diminfo[0].shape)) __pyx_t_15 = 0;
+    } else if (unlikely(__pyx_t_13 >= __pyx_pybuffernd_patch_dst_g.diminfo[0].shape)) __pyx_t_15 = 0;
     if (unlikely(__pyx_t_15 != -1)) {
       __Pyx_RaiseBufferIndexError(__pyx_t_15);
       {__pyx_filename = __pyx_f[0]; __pyx_lineno = 219; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     }
-    __pyx_t_14 = (((*__Pyx_BufPtrStrided1d(__pyx_t_8exemplar_DTYPE_t *, __pyx_pybuffernd_patch_dst_r.rcbuffer->pybuffer.buf, __pyx_t_13, __pyx_pybuffernd_patch_dst_r.diminfo[0].strides)) != 0.9999) != 0);
+    __pyx_t_14 = (((*__Pyx_BufPtrStrided1d(__pyx_t_8exemplar_DTYPE_t *, __pyx_pybuffernd_patch_dst_g.rcbuffer->pybuffer.buf, __pyx_t_13, __pyx_pybuffernd_patch_dst_g.diminfo[0].strides)) != 0.9999) != 0);
     if (__pyx_t_14) {
     } else {
       __pyx_t_11 = __pyx_t_14;
@@ -4198,29 +4198,29 @@ static PyObject *__pyx_f_8exemplar_patch_ssd(PyArrayObject *__pyx_v_patch_dst, P
 
     /* "exemplar.pyx":220
  *         if (patch_dst_r[i] != 0.0 and
- *             patch_dst_r[i] != 0.9999 and
- *             patch_dst_r[i] != 0.0): # ignore unfilled pixels             # <<<<<<<<<<<<<<
+ *             patch_dst_g[i] != 0.9999 and
+ *             patch_dst_b[i] != 0.0): # ignore unfilled pixels             # <<<<<<<<<<<<<<
  *             sum += (patch_dst_r[i] - patch_src_r[i]) ** 2
  *             sum += (patch_dst_g[i] - patch_src_g[i]) ** 2
  */
     __pyx_t_15 = __pyx_v_i;
     __pyx_t_16 = -1;
     if (__pyx_t_15 < 0) {
-      __pyx_t_15 += __pyx_pybuffernd_patch_dst_r.diminfo[0].shape;
+      __pyx_t_15 += __pyx_pybuffernd_patch_dst_b.diminfo[0].shape;
       if (unlikely(__pyx_t_15 < 0)) __pyx_t_16 = 0;
-    } else if (unlikely(__pyx_t_15 >= __pyx_pybuffernd_patch_dst_r.diminfo[0].shape)) __pyx_t_16 = 0;
+    } else if (unlikely(__pyx_t_15 >= __pyx_pybuffernd_patch_dst_b.diminfo[0].shape)) __pyx_t_16 = 0;
     if (unlikely(__pyx_t_16 != -1)) {
       __Pyx_RaiseBufferIndexError(__pyx_t_16);
       {__pyx_filename = __pyx_f[0]; __pyx_lineno = 220; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
     }
-    __pyx_t_14 = (((*__Pyx_BufPtrStrided1d(__pyx_t_8exemplar_DTYPE_t *, __pyx_pybuffernd_patch_dst_r.rcbuffer->pybuffer.buf, __pyx_t_15, __pyx_pybuffernd_patch_dst_r.diminfo[0].strides)) != 0.0) != 0);
+    __pyx_t_14 = (((*__Pyx_BufPtrStrided1d(__pyx_t_8exemplar_DTYPE_t *, __pyx_pybuffernd_patch_dst_b.rcbuffer->pybuffer.buf, __pyx_t_15, __pyx_pybuffernd_patch_dst_b.diminfo[0].strides)) != 0.0) != 0);
     __pyx_t_11 = __pyx_t_14;
     __pyx_L6_bool_binop_done:;
     if (__pyx_t_11) {
 
       /* "exemplar.pyx":221
- *             patch_dst_r[i] != 0.9999 and
- *             patch_dst_r[i] != 0.0): # ignore unfilled pixels
+ *             patch_dst_g[i] != 0.9999 and
+ *             patch_dst_b[i] != 0.0): # ignore unfilled pixels
  *             sum += (patch_dst_r[i] - patch_src_r[i]) ** 2             # <<<<<<<<<<<<<<
  *             sum += (patch_dst_g[i] - patch_src_g[i]) ** 2
  *             sum += (patch_dst_b[i] - patch_src_b[i]) ** 2
@@ -4248,7 +4248,7 @@ static PyObject *__pyx_f_8exemplar_patch_ssd(PyArrayObject *__pyx_v_patch_dst, P
       __pyx_v_sum = (__pyx_v_sum + pow(((*__Pyx_BufPtrStrided1d(__pyx_t_8exemplar_DTYPE_t *, __pyx_pybuffernd_patch_dst_r.rcbuffer->pybuffer.buf, __pyx_t_16, __pyx_pybuffernd_patch_dst_r.diminfo[0].strides)) - (*__Pyx_BufPtrStrided1d(__pyx_t_8exemplar_DTYPE_t *, __pyx_pybuffernd_patch_src_r.rcbuffer->pybuffer.buf, __pyx_t_17, __pyx_pybuffernd_patch_src_r.diminfo[0].strides))), 2.0));
 
       /* "exemplar.pyx":222
- *             patch_dst_r[i] != 0.0): # ignore unfilled pixels
+ *             patch_dst_b[i] != 0.0): # ignore unfilled pixels
  *             sum += (patch_dst_r[i] - patch_src_r[i]) ** 2
  *             sum += (patch_dst_g[i] - patch_src_g[i]) ** 2             # <<<<<<<<<<<<<<
  *             sum += (patch_dst_b[i] - patch_src_b[i]) ** 2
