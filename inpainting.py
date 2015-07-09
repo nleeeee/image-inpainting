@@ -1,13 +1,12 @@
 from pylab import *
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.misc import imread
+from scipy.misc import imread, imresize
 from scipy.ndimage import filters
 from PIL import Image
 from scipy import ndimage
 from skimage.morphology import erosion, disk
 from exemplar import *
-from sklearn.preprocessing import normalize
 
 def paste_patch(x, y, patch, img, patch_size = 9):
     '''Updates the confidence values and mask image for the image to be
@@ -70,8 +69,8 @@ def update(x, y, confidence, mask, patch_size = 9):
     
 if __name__ == '__main__':
     
-    src = imread('golf.jpg') # source image
-    mask = imread('golf-mask.pgm') # mask; binary image specifying unfilled regions with a value of 0
+    src = imread('hollywood.jpg') # source image
+    mask = imread('hollywood-mask.bmp') # mask; binary image specifying unfilled regions with a value of 0
     mask /= 255.0
     unfilled_img = src/255.0
     
@@ -82,11 +81,11 @@ if __name__ == '__main__':
     unfilled_img[np.where(mask == 0.0)] = [0.0, 0.9999, 0.0] # place holder value for unfilled pixels
     
     patch_count = 0
-    patch_size = 13 # must be odd
+    patch_size = 9 # must be odd
     
     grayscale = src[:,:,0]*.2125 + src[:,:,1]*.7154 + src[:,:,2]*.0721
     grayscale /= 255.0
-    #grayscale = ndimage.gaussian_filter(grayscale, 0.5) # gaussian smoothing for computing gradients
+    #grayscale = ndimage.gaussian_filter(grayscale, 1) # gaussian smoothing for computing gradients
     
     while np.where(mask == 0)[0].any():
         fill_front = mask - erosion(mask, disk(1)) # boundary of unfilled region
