@@ -6,11 +6,11 @@ Implementaion of exemplar-based image inpainting algorithm by Criminisi et al.
 
 ##### Original image
 
-![bungee](input.jpg)
+![bungee](images/input.jpg)
 
 ##### Mask
 
-![bungeemask](input-mask.bmp)
+![bungeemask](masks/input-mask.bmp)
 
 ##### Inpainted images
 
@@ -24,11 +24,11 @@ Patch size 9, Gaussian smoothed with sigma=2
 
 ##### Original image
 
-![baby](baby.jpg)
+![baby](iamges/baby.jpg)
 
 ##### Mask
 
-![babymask](baby-mask.bmp)
+![babymask](masks/baby-mask.bmp)
 
 ##### Inpainted image
 
@@ -38,11 +38,11 @@ Patch size 15, Gaussian smoothed with sigma=1
 
 ##### Original image
 
-![hollywood](hollywood.jpg)
+![hollywood](images/hollywood.jpg)
 
 ##### Mask
 
-![hmask](hollywood-mask.bmp)
+![hmask](masks/hollywood-mask.bmp)
 
 ##### Inpainted image
 
@@ -54,11 +54,11 @@ Patch size 9, Gaussian smooth with sigma=1
 
 ##### Original image
 
-![golf](golf.jpg)
+![golf](images/golf.jpg)
 
 ##### Mask
 
-![golf](golf-mask.pgm)
+![golf](masks/golf-mask.pgm)
 
 ##### Inpainted image
 
@@ -72,11 +72,11 @@ Patch size 37, no Gaussian smoothing
 
 ##### Original image
 
-![zoo](zoo.jpg)
+![zoo](images/zoo.jpg)
 
 ##### Mask
 
-![zoom](zoo-mask.bmp)
+![zoom](masks/zoo-mask.bmp)
 
 ##### Inpainted image
 
