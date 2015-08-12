@@ -122,7 +122,7 @@ cpdef paste_patch(x,
             t += 1
         s += 1
         t = 0
-    #img[x-p:x+p+1, y-p:y+p+1] = patch
+
     return img
 
 cpdef find_max_priority(np.ndarray[DTYPEi_t, ndim=1] boundary_ptx, 

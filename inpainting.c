@@ -2402,7 +2402,7 @@ static PyObject *__pyx_f_10inpainting_paste_patch(PyObject *__pyx_v_x, PyObject 
  *             t += 1
  *         s += 1             # <<<<<<<<<<<<<<
  *         t = 0
- *     #img[x-p:x+p+1, y-p:y+p+1] = patch
+ * 
  */
     __pyx_v_s = (__pyx_v_s + 1);
 
@@ -2410,7 +2410,7 @@ static PyObject *__pyx_f_10inpainting_paste_patch(PyObject *__pyx_v_x, PyObject 
  *             t += 1
  *         s += 1
  *         t = 0             # <<<<<<<<<<<<<<
- *     #img[x-p:x+p+1, y-p:y+p+1] = patch
+ * 
  *     return img
  */
     __pyx_v_t = 0;
@@ -2418,7 +2418,7 @@ static PyObject *__pyx_f_10inpainting_paste_patch(PyObject *__pyx_v_x, PyObject 
 
   /* "inpainting.pyx":126
  *         t = 0
- *     #img[x-p:x+p+1, y-p:y+p+1] = patch
+ * 
  *     return img             # <<<<<<<<<<<<<<
  * 
  * cpdef find_max_priority(np.ndarray[DTYPEi_t, ndim=1] boundary_ptx,
