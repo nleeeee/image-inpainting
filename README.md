@@ -24,7 +24,7 @@ Patch size 9, Gaussian smoothed with sigma=2
 
 ##### Original image
 
-![baby](iamges/baby.jpg)
+![baby](images/baby.jpg)
 
 ##### Mask
 
