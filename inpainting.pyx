@@ -1,11 +1,22 @@
 import numpy as np
 cimport numpy as np
 from libc.math cimport sqrt
+from pylab import *
+import matplotlib.pyplot as plt
+from scipy.misc import imread, imresize
+from scipy.ndimage import filters
+from PIL import Image
+from scipy import ndimage
+from skimage.morphology import erosion, disk
+import os
 
 ctypedef np.float64_t DTYPE_t
 ctypedef np.int_t DTYPEi_t
 
-cpdef get_patch(cntr_ptx, cntr_pty, np.ndarray img, patch_size):
+cpdef get_patch(cntr_ptx, 
+                cntr_pty, 
+                np.ndarray img, 
+                patch_size):
     '''Gets the patch centered at x and y in the image img with dimensions
     patch_size by patch_size.
     
@@ -30,7 +41,7 @@ cpdef get_patch(cntr_ptx, cntr_pty, np.ndarray img, patch_size):
         int x = cntr_ptx
         int y = cntr_pty
         int p = patch_size // 2
-        np.ndarray patch = img[x-p:x+p+1, y-p:y+p+1]
+        np.ndarray patch = img[x-p:x+p+1,y-p:y+p+1]
     return patch
     
 cpdef copy_patch(np.ndarray[DTYPE_t, ndim=3] patch_dst, 
@@ -68,6 +79,51 @@ cpdef copy_patch(np.ndarray[DTYPE_t, ndim=3] patch_dst,
         i += 1
     
     return patch_dst
+    
+cpdef paste_patch(x, 
+                  y, 
+                  np.ndarray[DTYPE_t, ndim=3] patch, 
+                  np.ndarray[DTYPE_t, ndim=3]img, 
+                  patch_size = 9):
+    '''Updates the confidence values and mask image for the image to be
+    to be inpainted.
+    
+    Parameters
+    ----------
+    x : int
+        x coordinate of the centre of the patch which has been filled.
+    y : int 
+        y coordinate of the centre of the patch which has been filled.
+    patch : 3-D array
+        The patch which has been filled with information from the exemplar patch
+    img : 3-D array
+        The target image with the unfilled regions.
+    patch_size : int
+        Dimensions of the patch; must be odd.
+        
+    Returns
+    -------
+    img : 3-D array
+        The target image after it has been updated with the new filled patch.
+    '''
+    
+    cdef:
+        int p = patch_size // 2
+        int x0 = x-p
+        int x1 = x+p
+        int y0 = y-p
+        int y1 = y+p
+        int i,j
+        int s = 0, t = 0
+    
+    for i from x0 <= i <= x1:
+        for j from y0 <= j <= y1:
+            img[i,j] = patch[s,t]
+            t += 1
+        s += 1
+        t = 0
+    #img[x-p:x+p+1, y-p:y+p+1] = patch
+    return img
 
 cpdef find_max_priority(np.ndarray[DTYPEi_t, ndim=1] boundary_ptx, 
                         np.ndarray[DTYPEi_t, ndim=1] boundary_pty, 
@@ -225,9 +281,9 @@ cpdef patch_ssd(np.ndarray[DTYPE_t, ndim=3] patch_dst,
     return sum
     
 cpdef find_exemplar_patch_ssd(np.ndarray[DTYPE_t, ndim=3] img, 
-                              x, 
-                              y, 
                               np.ndarray[DTYPE_t, ndim=3] patch, 
+                              x, 
+                              y,
                               patch_size = 9):
     '''Finds the best exemplar patch with the minimum sum of squared 
     differences.
@@ -236,15 +292,15 @@ cpdef find_exemplar_patch_ssd(np.ndarray[DTYPE_t, ndim=3] img,
     ----------
     img : 3-D array
         The image with unfilled regions to be inpainted.
+    patch : 3-D array
+        The patch centered at (x, y) with the highest priority value and an 
+        unfilled region.
     x : int
         The x coordinate of the center of the patch with tbe highest
         priority value.
     y : int
         The y coordinate of the center of the patch with tbe highest
         priority value.
-    patch : 3-D array
-        The patch centered at (x, y) with the highest priority value and an 
-        unfilled region.
     patch_size : int
         Dimensions of the patch size; must be odd.
         
@@ -295,3 +351,160 @@ cpdef find_exemplar_patch_ssd(np.ndarray[DTYPE_t, ndim=3] img,
                     min_ssd = ssd
         i += 1
     return best_patch, best_x, best_y
+    
+cpdef update(x, y, 
+             np.ndarray confidence, 
+             np.ndarray mask, 
+             patch_size = 9):
+    '''Updates the confidence values and mask image for the image to be
+    to be inpainted.
+    
+    Parameters
+    ----------
+    x : int
+        x coordinate of the centre of the patch which has been filled.
+    y : int 
+        y coordinate of the centre of the patch which has been filled.
+    confidence : 2-D array
+        2-D array holding confidence values for the image to be inpainted.
+    mask : 2-D array
+        A binary image specifying regions to be inpainted with a value of 0 
+        and 1 elsewhere.
+    patch_size : int
+        Dimensions of the patch; must be odd.
+        
+    Returns
+    -------
+    confidence : 2-D array
+        2-D array holding confidence values for the image to be inpainted.
+    mask : 2-D array
+        A binary image specifying regions to be inpainted with a value of 0 
+        and 1 elsewhere.
+    '''
+    
+    cdef:
+        int p = patch_size // 2
+        int i, j
+        int x0 = x-p
+        int x1 = x+p
+        int y0 = y-p
+        int y1 = y+p
+        
+    for i from x0 <= i <= x1:
+        for j from y0 <= j <= y1:
+            confidence[i,j] = 1
+            mask[i,j] = 1
+            
+    return confidence, mask
+    
+cpdef inpaint(src_im, mask_im, 
+              gaussian_blur=0, 
+              gaussian_sigma=1, 
+              patch_size=9):
+    '''Runs the inpainting algorithm.
+    
+    Parameters
+    ----------
+    src_im : string
+        Name/path of the source image. Must be a 3-D array when opened.
+    mask_im : string 
+        Name/path of the mask. Must be a 2-D array when opened.
+    gaussian_blur : int
+        Specifies whether to use Gaussian blur or not; 0 for no, 1 for yes.
+    gaussian_sigma: double
+        Value for the sigma for Gaussian blur.
+    patch_size : int
+        Dimensions of the path; must be odd.
+        
+    Returns
+    -------
+    unfilled_img : 3-D array
+        The inpainted image.
+    '''
+    
+    # just a filename for saving the result
+    dot = src_im.rfind('.')
+    saveName = src_im[:dot] + '-inpainted.jpg'
+    
+    cdef:
+        np.ndarray src = imread(src_im)
+        np.ndarray mask = imread(mask_im) # mask
+        np.ndarray[DTYPE_t, ndim=3] unfilled_img
+        np.ndarray[DTYPE_t, ndim=2] grayscale
+        np.ndarray confidence = np.zeros(imread(mask_im).shape)
+        np.ndarray dx, dy, nx, ny, fill_front
+        np.ndarray [DTYPEi_t, ndim=1] boundary_ptx, boundary_pty
+        int max_x, max_y, patch_count = 0
+        np.ndarray[DTYPE_t, ndim=3] max_patch, copied_patch
+    
+    unfilled_img = src/255.0
+    mask /= 255.0
+    grayscale = src[:,:,0]*.2125 + src[:,:,1]*.7154 + src[:,:,2]*.0721
+    grayscale /= 255.0
+    
+    # initialize confidence
+    confidence[np.where(mask != 0)] = 1
+    
+    # place holder value for unfilled pixels
+    unfilled_img[np.where(mask == 0.0)] = [0.0, 0.9999, 0.0] 
+        
+    if gaussian_blur == 1:
+        # gaussian smoothing for computing gradients
+        grayscale = ndimage.gaussian_filter(grayscale, gaussian_sigma) 
+    
+    while np.where(mask == 0)[0].any():
+        # boundary of unfilled region
+        fill_front = mask - erosion(mask, disk(1)) 
+        
+        # pixels where the fill front is located
+        boundary_ptx = np.where(fill_front > 0)[0] # x coordinates
+        boundary_pty = np.where(fill_front > 0)[1] # y coordinates
+        
+        # compute gradients with sobel operators        
+        dx = ndimage.sobel(grayscale, 0)
+        dy = ndimage.sobel(grayscale, 1)
+        # mark region to inpaint
+        dx[np.where(mask == 0)] = 0.0
+        dy[np.where(mask == 0)] = 0.0
+        
+        # compute normals
+        nx = ndimage.sobel(mask, 0)
+        ny = ndimage.sobel(mask, 1)
+        
+        highest_priority = find_max_priority(boundary_ptx, 
+                                             boundary_pty, 
+                                             confidence, 
+                                            -dy,
+                                             dx,
+                                            -ny,
+                                             nx,
+                                             patch_size)
+                                             
+        max_x = highest_priority[1]
+        max_y = highest_priority[2]
+        max_patch = get_patch(max_x, max_y, unfilled_img, patch_size)
+        
+        best_patch = find_exemplar_patch_ssd(unfilled_img,           
+                                             max_patch,
+                                             max_x,
+                                             max_y,
+                                             patch_size)
+        copied_patch = copy_patch(max_patch, best_patch[0])
+        unfilled_img = paste_patch(max_x, 
+                                   max_y, 
+                                   copied_patch, 
+                                   unfilled_img, 
+                                   patch_size)
+        confidence_image, mask = update(max_x,
+                                        max_y, 
+                                        confidence,
+                                        mask,
+                                        patch_size)
+        patch_count += 1
+        print patch_count, 'patches inpainted', highest_priority[1:], '<-', best_patch[1:]
+        imsave(saveName, unfilled_img) # save intermediate results
+    
+    # show the result
+    plt.title('Inpainted Image')
+    plt.axis('off')
+    plt.show(imshow(unfilled_img))
