@@ -10,7 +10,7 @@ class InpaintingGUI(wx.Frame):
                           id, 
                           title, 
                           wx.DefaultPosition, 
-                          wx.Size(608,290))
+                          wx.Size(608,340))
                           
         self.dirname = ''
         self.img = ''
