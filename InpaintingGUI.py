@@ -10,13 +10,20 @@ class InpaintingGUI(wx.Frame):
                           id, 
                           title, 
                           wx.DefaultPosition, 
-                          wx.Size(512,390))
+                          wx.Size(608,290))
+                          
         self.dirname = ''
         self.img = ''
         self.mask = ''
         self.patch_size = 9 # default patch size
         self.gauss = 0 # no Gaussian smoothing by default
         self.sigma = 1 # sigma value for Gaussian smoothing
+        
+        txtImage = 'Image'
+        txtMask = 'Mask'
+        labelImage = wx.StaticText(self, label=txtImage, pos=(106,10))
+        labelMask = wx.StaticText(self, label=txtMask, pos=(356,10))
+        
         self.CreateStatusBar()
         menubar = wx.MenuBar()
         file = wx.Menu()
@@ -42,9 +49,9 @@ class InpaintingGUI(wx.Frame):
         menubar.Append(settings, '&Settings')
         menubar.Append(help, '&Help')
         
-        wx.Button(self, 1, 'Inpaint', (215, 290))
-        wx.Button(self, 2, 'Load Image', (90, 250))
-        wx.Button(self, 3, 'Load Mask', (340, 250))
+        wx.Button(self, 1, 'Inpaint', (10, 100))
+        wx.Button(self, 2, 'Load Image', (10, 10))
+        wx.Button(self, 3, 'Load Mask', (10, 40))
         self.Bind(wx.EVT_BUTTON, self.onInpaint, id=1)
         self.Bind(wx.EVT_BUTTON, self.onOpenImage, id=2)
         self.Bind(wx.EVT_BUTTON, self.onOpenMask, id=3)
@@ -83,7 +90,7 @@ class InpaintingGUI(wx.Frame):
             self.img = self.dirname + '/' + self.filename
         png = wx.Image(self.img, wx.BITMAP_TYPE_ANY)
         png = png.Scale(240, 240).ConvertToBitmap()
-        wx.StaticBitmap(self, -1, png, (10, 5), (240, 240))
+        wx.StaticBitmap(self, -1, png, (106, 25), (240, 240))
         dlg.Destroy()
         
     def onOpenMask(self, e):
@@ -100,7 +107,7 @@ class InpaintingGUI(wx.Frame):
             self.mask = self.dirname + '/' + self.filename
         png = wx.Image(self.mask, wx.BITMAP_TYPE_ANY)
         png = png.Scale(240, 240).ConvertToBitmap()
-        wx.StaticBitmap(self, -1, png, (260, 5), (240, 240))
+        wx.StaticBitmap(self, -1, png, (356, 25), (240, 240))
         dlg.Destroy()
         
     def onPatchSize(self, e):
