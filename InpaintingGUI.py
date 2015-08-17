@@ -1,5 +1,6 @@
 import os
 import wx
+import wx.lib.agw.floatspin as fs
 from inpainting import inpaint
 
 class InpaintingGUI(wx.Frame):
@@ -15,6 +16,8 @@ class InpaintingGUI(wx.Frame):
         self.dirname = ''
         self.img = ''
         self.mask = ''
+        
+        # parameters for the algorithm
         self.patch_size = 9 # default patch size
         self.gauss = 0 # no Gaussian smoothing by default
         self.sigma = 1 # sigma value for Gaussian smoothing
@@ -59,7 +62,7 @@ class InpaintingGUI(wx.Frame):
         self.Bind(wx.EVT_MENU, self.onOpenMask, id=102)
         self.Bind(wx.EVT_MENU, self.onAbout, id=301)
         self.Bind(wx.EVT_MENU, self.onPatchSize, id=201)
-        #self.Bind(wx.EVT_MENU, self.onGauss, id=202)
+        self.Bind(wx.EVT_MENU, self.onGauss, id=202)
         self.Bind(wx.EVT_MENU, self.onQuit, id=105)
         
         self.SetMenuBar(menubar)
@@ -111,7 +114,7 @@ class InpaintingGUI(wx.Frame):
         dlg.Destroy()
         
     def onPatchSize(self, e):
-        '''Dialog to set patch size'''
+        '''Opens menu to set patch size'''
         ps = 'Enter patch size value:'
         dlg = wx.NumberEntryDialog(self, '', ps, 'Patch Size', 
                                    self.patch_size, 1, 1000)
@@ -120,10 +123,36 @@ class InpaintingGUI(wx.Frame):
         dlg.Destroy()
         
     def onGauss(self, e):
-        '''Configures to wheter apply Gaussian smoothing to the image 
+        '''Opens menu to apply Gaussian smoothing to the image 
         prior to calculating iamge gradients.'''
-        return
-    
+        dlg = wx.Dialog(self, -1, title='Gaussian Smoothing')
+        check = wx.CheckBox(dlg, label='Gaussian Smoothing', pos=(15, 30))
+        wx.StaticText(dlg, label='Sigma', pos=(20, 65))
+        sig = fs.FloatSpin(dlg, -1, pos=(65, 60), size=(70, -1), 
+                           min_val=0, max_val=25, value=self.sigma, agwStyle=fs.FS_LEFT)
+        sig.SetFormat("%f")
+        sig.SetDigits(3)
+        
+        def onOk(e):
+            if check.IsChecked():
+                self.gauss = 1
+            else:
+                self.gauss = 0
+            self.sigma = sig.GetValue()
+            dlg.Destroy()
+        
+        def onCancel(e):
+            dlg.Close()
+            
+        okBtn = wx.Button(dlg, label='Ok', pos=(40, 110), size=(60, -1))
+        cnBtn = wx.Button(dlg, label='Cancel', pos=(150, 110), size=(60, -1))
+        okBtn.Bind(wx.EVT_BUTTON, onOk)
+        cnBtn.Bind(wx.EVT_BUTTON, onCancel)
+        
+        dlg.SetSize((250, 200))
+        dlg.Centre()
+        dlg.ShowModal()
+        
     def onInpaint(self, e):
         '''Runs the inpainting algorithm when Inpaint button is clicked'''
         inpaint(self.img, self.mask, self.gauss, self.sigma, self.patch_size)
