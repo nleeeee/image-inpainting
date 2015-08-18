@@ -75,7 +75,14 @@ class InpaintingGUI(wx.Frame):
         
     def onAbout(self,e):
         '''Opens About dialog'''
-        dlg = wx.MessageDialog(self, 'Image Inpainting', 'About', wx.OK)
+        aboutMsg = 'This program is an implementation of an image inpainting ' +\
+                   'algorithm mentioned in \'Region Filling and Object Removal ' +\
+                   'by Exemplar-Based Image Inpainting\' by Criminisi et al. ' +\
+                   'In general, the patch size should be larger than the ' +\
+                   'largest feature in the picture. The Gaussian filtering is ' +\
+                   'for reducing noise in the image before taking the image ' +\
+                   'derivates.' 
+        dlg = wx.MessageDialog(self, aboutMsg, 'About', wx.OK)
         dlg.ShowModal()
         dlg.Destroy()
     
