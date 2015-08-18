@@ -14,6 +14,8 @@ SciPy for Python 2
 
 Matplotlib for Python 2
 
+wxPython 3.0.0 or higher
+
 #### Instructions
 
 ![1](instruction-pics/1.png)
