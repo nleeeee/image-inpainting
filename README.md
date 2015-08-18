@@ -1,6 +1,6 @@
 # Image Inpainting
 
-Implementaion of exemplar-based image inpainting algorithm by Criminisi et al. 
+Implementation of exemplar-based image inpainting algorithm by Criminisi et al. 
 
 Requirements:
 
