@@ -28,7 +28,7 @@ Enter the patch size. By default, it is 9. The patch size must be odd.
 
 ![3](instruction-pics/3.png)
 
-Choose to whether to apply Gaussian filtering prior to computing the image gradients and choose sigma value.
+Select option to apply Gaussian filtering prior to computing the image gradients and choose sigma value.
 
 ![4](instruction-pics/4.png)
 
