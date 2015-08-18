@@ -2,6 +2,8 @@ import os
 import wx
 import wx.lib.agw.floatspin as fs
 from inpainting import inpaint
+import numpy as np
+from scipy.misc import imread
 
 class InpaintingGUI(wx.Frame):
     
@@ -125,8 +127,16 @@ class InpaintingGUI(wx.Frame):
         ps = 'Enter patch size value:'
         dlg = wx.NumberEntryDialog(self, '', ps, 'Patch Size', 
                                    self.patch_size, 1, 1000)
+        wrongPS = 'Patch size must be odd.'
         if dlg.ShowModal() == wx.ID_OK:
-            self.patch_size = dlg.GetValue()
+            if dlg.GetValue() % 2 == 0:
+                # patch size must be odd
+                errorMsg = wx.MessageDialog(self, wrongPS, '', wx.OK)
+                errorMsg.ShowModal()
+                errorMsg.Destroy()
+                dlg.ShowModal()
+            else:
+                self.patch_size = dlg.GetValue()
         dlg.Destroy()
         
     def onGauss(self, e):
@@ -162,7 +172,16 @@ class InpaintingGUI(wx.Frame):
         
     def onInpaint(self, e):
         '''Runs the inpainting algorithm when Inpaint button is clicked'''
-        inpaint(self.img, self.mask, self.gauss, self.sigma, self.patch_size)
+        img = imread(self.img)
+        mask = imread(self.mask)
+        wrongDim = 'Image and mask must have same dimensions.'
+        if img.shape[:2] != mask.shape:
+            # image and mask must have same dimensions
+            errorMsg = wx.MessageDialog(self, wrongDim, '', wx.OK)
+            errorMsg.ShowModal()
+            errorMsg.Destroy()
+        else:
+            inpaint(self.img, self.mask, self.gauss, self.sigma, self.patch_size)
         
 if __name__ == '__main__':
     app = wx.App(False)
