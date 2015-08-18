@@ -2,6 +2,38 @@
 
 Implementaion of exemplar-based image inpainting algorithm by Criminisi et al. 
 
+Requirements:
+
+Python 2.7.9 or greater
+
+Cython 0.22 or greater
+
+NumPy for Python 2
+
+SciPy for Python 2
+
+Matplotlib for Python 2
+
+#### Instructions
+
+![1](instruction-pics/1.png)
+
+Run the program to open the GUI.
+
+![2](instruction-pics/2.png)
+
+Enter the patch size. By default, it is 9. The patch size must be odd.
+
+![3](instruction-pics/3.png)
+
+Choose to whether to apply Gaussian filtering prior to computing the image gradients and choose sigma value.
+
+![4](instruction-pics/4.png)
+
+Load the image and its mask. Press the Inpaint button to run the algorithm.
+
+![5](instruction-pics/5.png)
+
 #### Some feasible results
 
 ##### Original image
@@ -13,10 +45,6 @@ Implementaion of exemplar-based image inpainting algorithm by Criminisi et al.
 ![bungeemask](masks/input-mask.bmp)
 
 ##### Inpainted images
-
-Patch size 9, Gaussian smoothed with sigma=1.625
-
-![bungeeresult1](results/bungee_result_9_sigma1.625.jpg)
 
 Patch size 9, Gaussian smoothed with sigma=2
 
@@ -51,6 +79,20 @@ Patch size 9, Gaussian smooth with sigma=1
 ![hresult](results/hollywood-result-9-sigma1.jpg)
 
 #### Not so good results
+
+##### Original image
+
+![bungee](images/input.jpg)
+
+##### Mask
+
+![bungeemask](masks/input-mask.bmp)
+
+##### Inpainted images
+
+Patch size 9, Gaussian smoothed with sigma=1.625
+
+![bungeeresult1](results/bungee_result_9_sigma1.625.jpg)
 
 ##### Original image
 
