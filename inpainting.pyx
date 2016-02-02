@@ -438,7 +438,7 @@ cpdef inpaint(src_im, mask_im,
         np.ndarray[DTYPE_t, ndim=3] max_patch, copied_patch
     
     unfilled_img = src/255.0
-    mask /= 255.0
+    mask = mask/255.0
     grayscale = src[:,:,0]*.2125 + src[:,:,1]*.7154 + src[:,:,2]*.0721
     grayscale /= 255.0
     
