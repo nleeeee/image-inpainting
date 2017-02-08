@@ -406,9 +406,12 @@ cpdef inpaint(src_im, mask_im, save_name,
     Parameters
     ----------
     src_im : string
-        Name/path of the source image. Must be a 3-D array when opened.
+        Source image. 3-D array.
     mask_im : string 
-        Name/path of the mask. Must be a 2-D array when opened.
+        Mask indicating areas in the source image to inpaint. 2-D array.
+    save_name : string
+        Name of the source image. Will be used to save intermediate and final
+        result of the algorithm.
     gaussian_blur : int
         Specifies whether to use Gaussian blur or not; 0 for no, 1 for yes.
     gaussian_sigma: double
