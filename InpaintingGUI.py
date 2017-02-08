@@ -181,7 +181,21 @@ class InpaintingGUI(wx.Frame):
             errorMsg.ShowModal()
             errorMsg.Destroy()
         else:
-            inpaint(self.img, self.mask, self.gauss, self.sigma, self.patch_size)
+            padded_img = np.zeros((img.shape[0] + self.patch_size + 1,
+                                   img.shape[1] + self.patch_size + 1,
+                                   img.shape[2]))
+            padded_mask = np.ones((mask.shape[0] + self.patch_size + 1,
+                                   mask.shape[1] + self.patch_size + 1))
+            padded_mask[np.where(padded_mask > 0)] = 255
+            
+            dim_x = img.shape[0]
+            dim_y = img.shape[1]
+            pad_size = (self.patch_size + 1) // 2
+            
+            padded_img[pad_size:dim_x+pad_size, pad_size:dim_y+pad_size, :] = img
+            padded_mask[pad_size:dim_x+pad_size, pad_size:dim_y+pad_size] = mask
+            
+            inpaint(padded_img, padded_mask, self.img, self.gauss, self.sigma, self.patch_size)
         
 if __name__ == '__main__':
     app = wx.App(False)

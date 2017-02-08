@@ -397,7 +397,7 @@ cpdef update(x, y,
             
     return confidence, mask
     
-cpdef inpaint(src_im, mask_im, 
+cpdef inpaint(src_im, mask_im, save_name,
               gaussian_blur=0, 
               gaussian_sigma=1, 
               patch_size=9):
@@ -421,17 +421,15 @@ cpdef inpaint(src_im, mask_im,
     unfilled_img : 3-D array
         The inpainted image.
     '''
-    
-    # just a filename for saving the result
-    dot = src_im.rfind('.')
-    saveName = src_im[:dot] + '-inpainted.jpg'
+    dot = save_name.rfind('.')
+    save_name = save_name[:dot] + '-inpainted.jpg'
     
     cdef:
-        np.ndarray src = imread(src_im)
-        np.ndarray mask = imread(mask_im) # mask
+        np.ndarray src = src_im
+        np.ndarray mask = mask_im
         np.ndarray[DTYPE_t, ndim=3] unfilled_img
         np.ndarray[DTYPE_t, ndim=2] grayscale
-        np.ndarray confidence = np.zeros(imread(mask_im).shape)
+        np.ndarray confidence = np.zeros(mask_im.shape)
         np.ndarray dx, dy, nx, ny, fill_front
         np.ndarray [DTYPEi_t, ndim=1] boundary_ptx, boundary_pty
         int max_x, max_y, patch_count = 0
@@ -502,7 +500,7 @@ cpdef inpaint(src_im, mask_im,
                                         patch_size)
         patch_count += 1
         print patch_count, 'patches inpainted', highest_priority[1:], '<-', best_patch[1:]
-        imsave(saveName, unfilled_img) # save intermediate results
+        imsave(save_name, unfilled_img) # save intermediate results
     
     # show the result
     plt.title('Inpainted Image')
